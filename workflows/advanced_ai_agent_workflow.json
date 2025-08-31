@@ -1,0 +1,290 @@
+{
+  "name": "Advanced AI Agent - Multi-Tool Workflow",
+  "nodes": [
+    {
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 300],
+      "parameters": {}
+    },
+    {
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [600, 300],
+      "parameters": {
+        "promptType": "define",
+        "text": "Process data using parallel API requests, manage data in Airtable, parse JSON structures, send leads to Lemlist, and manage emails through Google workspace. Execute tasks efficiently using available tools.",
+        "options": {
+          "systemMessage": "You are an advanced AI agent capable of managing complex data workflows. You have access to:\n1. HTTP Request tools for API calls (POST/GET for parallel requests)\n2. Airtable MCP for data management\n3. JSON parser for data structure handling\n4. Lemlist API for lead management\n5. Google Sandbox MCP for email management\n\nExecute multi-step workflows efficiently, handling data transformation, API integrations, and email management."
+        }
+      }
+    },
+    {
+      "id": "groq-model",
+      "name": "Groq Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [400, 100],
+      "parameters": {
+        "model": "gpt-oss-120b",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 2048
+        }
+      }
+    },
+    {
+      "id": "http-post-tool",
+      "name": "HTTP POST Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [800, 100],
+      "parameters": {
+        "toolDescription": "Make HTTP POST requests for parallel API operations. Use for sending data to external APIs and services.",
+        "method": "POST",
+        "url": "={{ $fromAI('URL', 'Enter the API endpoint URL', 'string') }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $fromAI('BODY', 'Enter the JSON payload', 'object') }}",
+        "optimizeResponse": true
+      }
+    },
+    {
+      "id": "http-get-tool",
+      "name": "HTTP GET Tool", 
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [800, 200],
+      "parameters": {
+        "toolDescription": "Make HTTP GET requests for parallel API operations. Use for retrieving data from external APIs and services.",
+        "method": "GET",
+        "url": "={{ $fromAI('URL', 'Enter the API endpoint URL', 'string') }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "json"
+            }
+          ]
+        },
+        "optimizeResponse": true
+      }
+    },
+    {
+      "id": "airtable-mcp",
+      "name": "Airtable MCP",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [800, 350],
+      "parameters": {
+        "endpointUrl": "https://server.smithery.ai/airtable-server/mcp?api_key=0a3d299d-30e5-444a-9cea-92cf97c7f1ad&profile=foreign-cow-ikLiIL",
+        "serverTransport": "httpStreamable",
+        "authentication": "none",
+        "include": "all"
+      }
+    },
+    {
+      "id": "json-parser",
+      "name": "JSON Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [400, 200],
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": \"string\",\n        \"name\": \"string\", \n        \"email\": \"string\",\n        \"status\": \"string\"\n      }\n    ],\n    \"metadata\": {\n      \"total\": \"number\",\n      \"page\": \"number\"\n    }\n  }\n}",
+        "autoFix": true
+      }
+    },
+    {
+      "id": "lemlist-tool",
+      "name": "Lemlist API Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest", 
+      "typeVersion": 1.1,
+      "position": [800, 450],
+      "parameters": {
+        "toolDescription": "Send leads and data to Lemlist for email campaigns. Use for adding contacts to Lemlist campaigns.",
+        "method": "POST",
+        "url": "={{ $fromAI('URL', 'Enter Lemlist API endpoint (e.g., https://api.lemlist.com/api/campaigns/{campaignId}/leads)', 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $fromAI('LEAD_DATA', 'Enter lead data (firstName, lastName, email, etc.)', 'object') }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "deduplicate",
+              "value": "true"
+            }
+          ]
+        },
+        "optimizeResponse": true
+      }
+    },
+    {
+      "id": "google-mcp",
+      "name": "Google Sandbox MCP",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [800, 550],
+      "parameters": {
+        "endpointUrl": "https://server.smithery.ai/@jikime/py-mcp-google-toolbox/mcp?api_key=0a3d299d-30e5-444a-9cea-92cf97c7f1ad&profile=foreign-cow-ikLiIL",
+        "serverTransport": "httpStreamable", 
+        "authentication": "none",
+        "include": "selected"
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP POST Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP GET Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent", 
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable MCP": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lemlist API Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sandbox MCP": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {},
+  "tags": [
+    {
+      "id": "ai-agent",
+      "name": "AI Agent"
+    },
+    {
+      "id": "groq",
+      "name": "Groq"
+    },
+    {
+      "id": "api-integration",
+      "name": "API Integration"
+    },
+    {
+      "id": "data-management",
+      "name": "Data Management"
+    }
+  ]
+}

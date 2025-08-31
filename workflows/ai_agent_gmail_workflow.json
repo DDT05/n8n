@@ -1,0 +1,121 @@
+{
+  "name": "AI Agent Gmail Email Sender",
+  "nodes": [
+    {
+      "id": "chat-trigger",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [100, 300],
+      "parameters": {
+        "public": true,
+        "mode": "hostedChat",
+        "authentication": "none",
+        "options": {
+          "loadPreviousSession": true
+        }
+      }
+    },
+    {
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [400, 300],
+      "parameters": {
+        "promptType": "auto",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are an AI assistant that can help users send emails via Gmail. When a user asks you to send an email, use the Gmail tool to send it. Always ask for the recipient email address, subject, and message content if not provided. Be helpful and confirm the email details before sending."
+        }
+      }
+    },
+    {
+      "id": "openai-model",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [400, 100],
+      "parameters": {
+        "model": {
+          "mode": "list",
+          "value": "gpt-3.5-turbo"
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      }
+    },
+    {
+      "id": "gmail-tool",
+      "name": "Gmail Tool",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [400, 500],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.message }}",
+        "options": {
+          "fromName": "AI Assistant"
+        }
+      },
+      "usableAsTool": true,
+      "toolDescription": "Send emails via Gmail. Requires: to (recipient email), subject (email subject), message (email content)."
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {},
+  "tags": [
+    {
+      "id": "gmail",
+      "name": "Gmail"
+    },
+    {
+      "id": "ai-agent",
+      "name": "AI Agent"
+    }
+  ]
+}

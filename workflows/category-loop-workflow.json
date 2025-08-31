@@ -1,0 +1,67 @@
+{
+  "name": "Category Loop Workflow",
+  "nodes": [
+    {
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {}
+    },
+    {
+      "id": "code-categories",
+      "name": "Generate Categories", 
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const categories = ['clinics', 'restaurants', 'museums'];\n\nreturn categories.map(category => ({ json: { category } }));"
+      }
+    },
+    {
+      "id": "split-batches",
+      "name": "Loop Categories",
+      "type": "n8n-nodes-base.splitInBatches", 
+      "typeVersion": 3,
+      "position": [640, 300],
+      "parameters": {
+        "batchSize": 1
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Categories",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Categories": {
+      "main": [
+        [
+          {
+            "node": "Loop Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all", 
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "active": false
+}
